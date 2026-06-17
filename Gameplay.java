@@ -2,27 +2,26 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
 
-// Gameplay class
-// JPanel -> used for drawing game objects
-// KeyListener -> used for keyboard input
-// ActionListener -> used for timer events
 public class Gameplay extends JPanel implements KeyListener, ActionListener {
 
-    // Timer object
+    // Timer for game loop
     private Timer timer;
 
-    // Paddle X position
+    // Score
+    private int score = 0;
+
+    // Paddle position
     private int paddleX = 300;
 
     // Ball position
     private int ballPosX = 120;
     private int ballPosY = 350;
 
-    // Ball direction and speed
+    // Ball movement direction
     private int ballXDir = -2;
     private int ballYDir = -3;
 
-    // Brick object
+    // Brick map
     private MapGenerator map;
 
     // Constructor
@@ -31,106 +30,126 @@ public class Gameplay extends JPanel implements KeyListener, ActionListener {
         // Create 3 rows and 7 columns of bricks
         map = new MapGenerator(3, 7);
 
-        // Add keyboard listener
+        // Enable keyboard input
         addKeyListener(this);
-
-        // Allow keyboard focus
         setFocusable(true);
-
-        // Enable arrow keys
         setFocusTraversalKeysEnabled(false);
 
-        // Timer runs every 10 milliseconds
+        // Timer runs every 10 ms
         timer = new Timer(10, this);
-
-        // Start timer
         timer.start();
     }
 
-    // Draw everything on screen
     @Override
     protected void paintComponent(Graphics g) {
 
-        // Call parent paint method
         super.paintComponent(g);
 
-        // Background color
+        // Background
         g.setColor(Color.BLACK);
-
-        // Draw background
         g.fillRect(0, 0, 700, 600);
 
-        // Draw bricks
+        // Draw Score
+        g.setColor(Color.WHITE);
+        g.setFont(new Font("Arial", Font.BOLD, 20));
+        g.drawString("Score: " + score, 550, 30);
+
+        // Draw Bricks
         map.draw((Graphics2D) g);
 
-        // Paddle color
+        // Draw Paddle
         g.setColor(Color.GREEN);
-
-        // Draw paddle
         g.fillRect(paddleX, 520, 100, 10);
 
-        // Ball color
+        // Draw Ball
         g.setColor(Color.YELLOW);
-
-        // Draw ball
         g.fillOval(ballPosX, ballPosY, 20, 20);
     }
 
-    // Runs automatically by timer
-  @Override
-public void actionPerformed(ActionEvent e) {
+    @Override
+    public void actionPerformed(ActionEvent e) {
 
-    // Move ball
-    ballPosX += ballXDir;
-    ballPosY += ballYDir;
+        // Move Ball
+        ballPosX += ballXDir;
+        ballPosY += ballYDir;
 
-    // Ball Rectangle
-    Rectangle ballRect = new Rectangle(
-            ballPosX,
-            ballPosY,
-            20,
-            20
-    );
+        // Ball Rectangle
+        Rectangle ballRect = new Rectangle(
+                ballPosX,
+                ballPosY,
+                20,
+                20
+        );
 
-    // Paddle Rectangle
-    Rectangle paddleRect = new Rectangle(
-            paddleX,
-            520,
-            100,
-            10
-    );
+        // Paddle Rectangle
+        Rectangle paddleRect = new Rectangle(
+                paddleX,
+                520,
+                100,
+                10
+        );
 
-    // Paddle Collision
-    if(ballRect.intersects(paddleRect)) {
-        ballYDir = -ballYDir;
+        // Paddle Collision
+        if (ballRect.intersects(paddleRect)) {
+            ballYDir = -ballYDir;
+        }
+
+        // Brick Collision
+        A:
+        for (int i = 0; i < map.map.length; i++) {
+
+            for (int j = 0; j < map.map[0].length; j++) {
+
+                if (map.map[i][j] > 0) {
+
+                    Rectangle brickRect = new Rectangle(
+                            j * map.brickWidth + 80,
+                            i * map.brickHeight + 50,
+                            map.brickWidth,
+                            map.brickHeight
+                    );
+
+                    if (ballRect.intersects(brickRect)) {
+
+                        // Remove brick
+                        map.setBrickValue(0, i, j);
+
+                        // Increase score
+                        score += 10;
+
+                        // Bounce ball
+                        ballYDir = -ballYDir;
+
+                        break A;
+                    }
+                }
+            }
+        }
+
+        // Left Wall
+        if (ballPosX < 0) {
+            ballXDir = -ballXDir;
+        }
+
+        // Right Wall
+        if (ballPosX > 660) {
+            ballXDir = -ballXDir;
+        }
+
+        // Top Wall
+        if (ballPosY < 0) {
+            ballYDir = -ballYDir;
+        }
+
+        repaint();
     }
 
-    // Left Wall
-    if (ballPosX < 0) {
-        ballXDir = -ballXDir;
-    }
-
-    // Right Wall
-    if (ballPosX > 660) {
-        ballXDir = -ballXDir;
-    }
-
-    // Top Wall
-    if (ballPosY < 0) {
-        ballYDir = -ballYDir;
-    }
-
-    repaint();
-}
-
-    // Keyboard input
     @Override
     public void keyPressed(KeyEvent e) {
 
         // Right Arrow
         if (e.getKeyCode() == KeyEvent.VK_RIGHT) {
 
-            // Keep paddle inside screen
             if (paddleX < 580) {
                 paddleX += 20;
             }
@@ -139,22 +158,18 @@ public void actionPerformed(ActionEvent e) {
         // Left Arrow
         if (e.getKeyCode() == KeyEvent.VK_LEFT) {
 
-            // Keep paddle inside screen
             if (paddleX > 10) {
                 paddleX -= 20;
             }
         }
 
-        // Redraw screen
         repaint();
     }
 
-    // Required by KeyListener
     @Override
     public void keyReleased(KeyEvent e) {
     }
 
-    // Required by KeyListener
     @Override
     public void keyTyped(KeyEvent e) {
     }
